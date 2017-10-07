@@ -77,15 +77,13 @@
                             <goal>generate</goal>
                         </goals>
                         <configuration>
+                            <jdbc>
+                                <url>jdbc:h2:mem:;INIT=RUNSCRIPT FROM 'src/main/resources/h2/schema.sql'</url>
+                                <user>sa</user>
+                            </jdbc>
                             <generator>
                                 <database>
-                                    <name>org.jooq.util.ddl.DDLDatabase</name>
-                                    <properties>
-                                        <property>
-                                            <key>scripts</key>
-                                            <value>src/main/resources/h2/schema.sql</value>
-                                        </property>
-                                    </properties>
+                                    <inputSchema>PUBLIC</inputSchema>
                                 </database>
                                 <target>
                                     <packageName>db</packageName>
@@ -95,13 +93,6 @@
 
                     </execution>
                 </executions>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.jooq</groupId>
-                        <artifactId>jooq-meta-extensions</artifactId>
-                        <version>${jooq.version}</version>
-                    </dependency>
-                </dependencies>
             </plugin>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
