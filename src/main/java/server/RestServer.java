@@ -2,6 +2,7 @@ package server;
 
 import com.google.gson.Gson;
 import model.Account;
+import model.ErrorMessage;
 import model.Transfer;
 import model.TransferRequest;
 import org.h2.jdbcx.JdbcConnectionPool;
@@ -42,15 +43,15 @@ public class RestServer {
 
         get("/accounts/:id",
                 (request, response) -> {
-                    Optional<Account> account = accountsService.getAccount(Long.parseLong(request.params(":id")));
+                    long accId = Long.parseLong(request.params(":id"));
+                    Optional<Account> account = accountsService.getAccount(accId);
 
                     if (account.isPresent())
                         return account.get();
                     else {
                         response.status(404);
 
-                        //TODO Error message
-                        return "";
+                        return new ErrorMessage("Account with id: " + accId + " is not found");
                     }
                 },
                 new JsonTransformer());
@@ -79,15 +80,15 @@ public class RestServer {
 
         get("/transfers/:id",
                 (request, response) -> {
-                    Optional<Transfer> transfer = transfersService.getTransfer(Long.parseLong(request.params(":id")));
+                    long trId = Long.parseLong(request.params(":id"));
+                    Optional<Transfer> transfer = transfersService.getTransfer(trId);
 
                     if (transfer.isPresent())
                         return transfer.get();
                     else {
                         response.status(404);
 
-                        //TODO Error message
-                        return "";
+                        return new ErrorMessage("Transfer with id: " + trId + " is not found");
                     }
                 },
                 new JsonTransformer());
@@ -95,19 +96,29 @@ public class RestServer {
         post("/transfers",
                 (request, response) -> {
                     Gson gson = new Gson();
+                    TransferRequest trReq = gson.fromJson(request.body(), TransferRequest.class);
 
-                    //TODO Validate balance > 0
-                    //TODO Validate fromAcc != toAcc
+                    if (trReq.amount.compareTo(BigDecimal.ZERO) <= 0) {
+                        response.status(422);
 
-                    TransferRequest transferRequest = gson.fromJson(request.body(), TransferRequest.class);
+                        return new ErrorMessage("Transfer amount: " + trReq.amount + " must be positive");
+                    }
 
-                    Transfer transfer = transfersService.transferAmount(transferRequest);
+                    if (trReq.fromAcc == trReq.toAcc) {
+                        response.status(422);
+
+                        return new ErrorMessage("Transfer fromAcc: " + trReq.fromAcc + " toAcc: " + trReq.toAcc +
+                                " can not be done between same accounts");
+                    }
+
+                    Transfer transfer = transfersService.transferAmount(trReq);
 
                     response.status(201);
 
                     return transfer;
                 },
                 new JsonTransformer());
+
 
         after((request, response) -> {
             response.header("Content-Encoding", "gzip");
