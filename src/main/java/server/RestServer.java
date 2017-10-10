@@ -16,11 +16,9 @@ import java.util.Optional;
 
 import static spark.Spark.*;
 
-//jdbc:h2:file:/data/sample
-//jdbc:h2:tcp://localhost/mem:test
 public class RestServer {
     //TODO Use in-memory database when development is finished
-    private static final String MEM_DB_URL = "jdbc:h2:mem:transfers;";
+    private static final String MEM_DB_URL = "jdbc:h2:mem:transfers;MULTI_THREADED=1;";
     private static final String FILE_DB_URL = "jdbc:h2:file:/Users/ilya/Work/Job Search/Revolut/transfers;";
     private static final String DB_INIT = "INIT=RUNSCRIPT FROM 'classpath:/h2/schema.sql'\\;RUNSCRIPT FROM 'classpath:/h2/data.sql';";
 
@@ -36,6 +34,7 @@ public class RestServer {
     }
 
     private void start() {
+        //TODO Add pagination for accounts
         get("/accounts",
                 (request, response) -> accountsService.getAllAccounts(),
                 new JsonTransformer());
@@ -55,6 +54,7 @@ public class RestServer {
                 },
                 new JsonTransformer());
 
+        //TODO Add pagination for account transfers
         get("/accounts/:id/transfers",
                 (request, response) -> accountsService.getAccountTransfers(Long.parseLong(request.params(":id"))),
                 new JsonTransformer());
@@ -71,6 +71,7 @@ public class RestServer {
 
         }, new JsonTransformer());
 
+        //TODO Add pagination for transfers
         get("/transfers",
                 (request, response) -> transfersService.getAllTransfers(),
                 new JsonTransformer());
