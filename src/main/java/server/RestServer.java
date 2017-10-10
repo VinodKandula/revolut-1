@@ -6,35 +6,78 @@ import org.h2.jdbcx.JdbcConnectionPool;
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
+import service.AccountsService;
+import spark.ResponseTransformer;
 
-import java.util.List;
+import java.util.Optional;
 
-import static db.tables.Account.ACCOUNT;
-import static spark.Spark.get;
-import static spark.Spark.staticFiles;
+import static spark.Spark.*;
 
 public class RestServer {
     private static final String DB_URL = "jdbc:h2:mem:transfers;" +
             "INIT=RUNSCRIPT FROM 'classpath:/h2/schema.sql'\\;RUNSCRIPT FROM 'classpath:/h2/data.sql';";
 
-    public static void main(String[] args) {
+    private final AccountsService accountsService;
+
+    public RestServer() {
         JdbcConnectionPool pool = JdbcConnectionPool.create(DB_URL, "sa", "");
         DSLContext ctx = DSL.using(pool, SQLDialect.H2);
 
-        staticFiles.location("/public");
-
-        Gson gson = new Gson();
-        get("/accounts", (req, res) -> {
-            List<Account> accs = ctx.selectFrom(ACCOUNT).fetchInto(Account.class);
-
-            return accs;
-        }, gson::toJson);
-
-        get("/list", (req, res) -> "Hello JRebel");
+        accountsService = new AccountsService(ctx);
     }
 
-    private static void print() {
+    private void start() {
+        get("/accounts",
+                (req, res) -> accountsService.getAllAccounts(),
+                new JsonTransformer());
 
-        System.out.println(456);
+        get("/accounts/:id",
+                (request, response) -> {
+                    Optional<Account> account = accountsService.getAccount(Long.parseLong(request.params(":id")));
+
+                    if (account.isPresent())
+                        return account.get();
+                    else {
+                        response.status(404);
+                        return "";
+                    }},
+                new JsonTransformer());
+
+        get("/accounts/:id/transfers",
+                (request, response) -> accountsService.getAccountTransfers(Long.parseLong(request.params(":id"))),
+                new JsonTransformer());
+
+        post("/accounts", (req, res) -> {
+            Gson gson = new Gson();
+            Account acc = gson.fromJson(req.body(), Account.class);
+
+            acc = accountsService.createAccount(acc);
+
+            res.status(201);
+
+            return acc;
+
+        }, new JsonTransformer());
+
+        after((request, response) -> {
+            response.header("Content-Encoding", "gzip");
+            response.type("application/json");
+        });
+    }
+
+    public static void main(String[] args) {
+        RestServer server = new RestServer();
+
+        server.start();
+    }
+
+    private static class JsonTransformer implements ResponseTransformer {
+        private final Gson gson = new Gson();
+
+        @Override
+        public String render(Object model) {
+            return gson.toJson(model);
+        }
     }
 }
+

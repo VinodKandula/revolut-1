@@ -5,8 +5,8 @@ import java.util.Date;
 
 public class Transfer {
     public long id;
+    public Date timestamp;
+    public Account fromAcc;
+    public Account toAcc;
     public BigDecimal amount;
-    public long sender;
-    public long recipient;
-    public Date date;
 }
