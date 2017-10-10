@@ -4,9 +4,8 @@ import db.tables.Account;
 import db.tables.records.TransferRecord;
 import model.Transfer;
 import model.TransferRequest;
-import org.jooq.DSLContext;
-import org.jooq.Record;
-import org.jooq.RecordMapper;
+import org.jooq.*;
+import org.jooq.impl.DSL;
 
 import java.util.List;
 import java.util.Optional;
@@ -42,14 +41,34 @@ public class TransfersService {
         return transfer;
     }
 
-    //TODO Add transactions
-    public Transfer transferAmount(TransferRequest transferRequest) {
-        TransferRecord transferRecord = ctx.insertInto(TRANSFER, TRANSFER.FROM_ACC, TRANSFER.TO_ACC, TRANSFER.AMOUNT)
-                .values(transferRequest.fromAcc, transferRequest.toAcc, transferRequest.amount)
-                .returning(TRANSFER.ID).fetchOne();
+    //TODO Check transactions correctness
+    //TODO Return Optional
+    public Transfer transferAmount(TransferRequest trReq) {
+        long trId = ctx.transactionResult(configuration -> {
+            DSL.using(configuration)
+                    .update(ACCOUNT)
+                    .set(ACCOUNT.BALANCE, ACCOUNT.BALANCE.minus(trReq.amount))
+                    .where(ACCOUNT.ID.eq(trReq.fromAcc))
+                    .execute();
+
+            DSL.using(configuration)
+                    .update(ACCOUNT)
+                    .set(ACCOUNT.BALANCE, ACCOUNT.BALANCE.plus(trReq.amount))
+                    .where(ACCOUNT.ID.eq(trReq.toAcc))
+                    .execute();
+
+            TransferRecord transferRecord = DSL.using(configuration)
+                    .insertInto(TRANSFER, TRANSFER.FROM_ACC, TRANSFER.TO_ACC, TRANSFER.AMOUNT)
+                    .values(trReq.fromAcc, trReq.toAcc, trReq.amount)
+                    .returning(TRANSFER.ID).fetchOne();
+
+
+
+            return transferRecord.getId();
+        });
 
         Transfer transfer = ctx.selectFrom(TRANSFER.join(fromAcc).onKey(TRANSFER.FROM_ACC).join(toAcc).onKey(TRANSFER.TO_ACC))
-                .where(TRANSFER.ID.eq(transferRecord.getId()))
+                .where(TRANSFER.ID.eq(trId))
                 .fetchOne(new TransferRecordMapper());
 
         return transfer;
