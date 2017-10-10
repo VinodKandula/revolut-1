@@ -8,6 +8,8 @@ import org.jooq.SQLDialect;
 import org.jooq.exception.DataAccessException;
 import org.jooq.exception.NoDataFoundException;
 import org.jooq.impl.DSL;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import service.AccountsService;
 import service.TransfersService;
 import spark.ResponseTransformer;
@@ -17,23 +19,23 @@ import java.math.BigDecimal;
 import static spark.Spark.*;
 
 public class RestApiServer {
-    //TODO Use in-memory database when development is finished
-    private static final String MEM_DB_URL = "jdbc:h2:mem:transfers;MULTI_THREADED=1;";
-    private static final String FILE_DB_URL = "jdbc:h2:file:/Users/ilya/Work/Job Search/Revolut/transfers;";
+    private final static Logger logger = LoggerFactory.getLogger(RestApiServer.class);
+
+    private static final String MEM_DB_URL = "jdbc:h2:mem:transfers;DB_CLOSE_DELAY=-1;MULTI_THREADED=1;";
     private static final String DB_INIT = "INIT=RUNSCRIPT FROM 'classpath:/h2/schema.sql'\\;RUNSCRIPT FROM 'classpath:/h2/data.sql';";
 
     private final AccountsService accountsService;
     private final TransfersService transfersService;
 
     public RestApiServer() {
-        JdbcConnectionPool pool = JdbcConnectionPool.create(FILE_DB_URL + DB_INIT, "sa", "");
+        JdbcConnectionPool pool = JdbcConnectionPool.create(MEM_DB_URL + DB_INIT, "sa", "");
         DSLContext ctx = DSL.using(pool, SQLDialect.H2);
 
         accountsService = new AccountsService(ctx);
         transfersService = new TransfersService(ctx);
     }
 
-    private void start() {
+    public void start() {
         accountsApi();
         transfersApi();
 
@@ -144,6 +146,8 @@ public class RestApiServer {
 
                 error = new ErrorMessage("Internal server error", e.getMessage());
             }
+
+            logger.error("Handled server exception", e);
 
             JsonTransformer json = new JsonTransformer();
             response.body(json.render(error));

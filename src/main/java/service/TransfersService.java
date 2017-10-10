@@ -41,7 +41,7 @@ public class TransfersService {
     }
 
     public Transfer transferAmount(TransferRequest trReq) {
-        long trId = ctx.transactionResult(configuration -> {
+        Transfer created = ctx.transactionResult(configuration -> {
             DSL.using(configuration)
                     .selectFrom(ACCOUNT).where(ACCOUNT.ID.eq(trReq.fromAcc).or(ACCOUNT.ID.eq(trReq.toAcc)))
                     .forUpdate().fetchInto(model.Account.class);
@@ -58,19 +58,17 @@ public class TransfersService {
                     .where(ACCOUNT.ID.eq(trReq.toAcc))
                     .execute();
 
-            TransferRecord transferRecord = DSL.using(configuration)
+            TransferRecord trRec = DSL.using(configuration)
                     .insertInto(TRANSFER, TRANSFER.FROM_ACC, TRANSFER.TO_ACC, TRANSFER.AMOUNT)
                     .values(trReq.fromAcc, trReq.toAcc, trReq.amount)
                     .returning(TRANSFER.ID).fetchOne();
 
-            return transferRecord.getId();
+            return ctx.selectFrom(TRANSFER.join(fromAcc).onKey(TRANSFER.FROM_ACC).join(toAcc).onKey(TRANSFER.TO_ACC))
+                    .where(TRANSFER.ID.eq(trRec.getId()))
+                    .fetchSingle(new TransferRecordMapper());
         });
 
-        Transfer transfer = ctx.selectFrom(TRANSFER.join(fromAcc).onKey(TRANSFER.FROM_ACC).join(toAcc).onKey(TRANSFER.TO_ACC))
-                .where(TRANSFER.ID.eq(trId))
-                .fetchOne(new TransferRecordMapper());
-
-        return transfer;
+        return created;
     }
 
     private class TransferRecordMapper implements RecordMapper<Record, Transfer> {

@@ -1,5 +1,6 @@
 package service;
 
+import db.tables.records.AccountRecord;
 import model.Account;
 import model.AccountCreation;
 import model.Transfer;
@@ -22,12 +23,18 @@ public class AccountsService {
     }
 
     public Account createAccount(AccountCreation acc) {
-        Account createdAcc = ctx.insertInto(ACCOUNT, ACCOUNT.NUMBER, ACCOUNT.BALANCE)
-                .values(acc.number, acc.balance)
-                .returning(ACCOUNT.ID, ACCOUNT.NUMBER, ACCOUNT.BALANCE)
-                .fetchOne().into(Account.class);
+        Account created = ctx.transactionResult(configuration -> {
+            AccountRecord accRec = ctx.insertInto(ACCOUNT, ACCOUNT.NUMBER, ACCOUNT.BALANCE)
+                    .values(acc.number, acc.balance)
+                    .returning(ACCOUNT.ID)
+                    .fetchOne();
 
-        return createdAcc;
+            return ctx.selectFrom(ACCOUNT)
+                    .where(ACCOUNT.ID.eq(accRec.getId()))
+                    .fetchSingle().into(Account.class);
+        });
+
+        return created;
     }
 
     public Account getAccount(long accId) {
