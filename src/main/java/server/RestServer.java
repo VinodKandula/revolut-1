@@ -12,6 +12,7 @@ import service.AccountsService;
 import service.TransfersService;
 import spark.ResponseTransformer;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 
 import static spark.Spark.*;
@@ -114,10 +115,61 @@ public class RestServer {
         });
     }
 
+    //TODO Move to tests
+    private void testTx() {
+        Thread t1 = new Thread(() -> {
+            TransferRequest tr = new TransferRequest();
+
+            tr.fromAcc = 1;
+            tr.toAcc = 2;
+            tr.amount = BigDecimal.valueOf(100);
+
+            System.out.println(Thread.currentThread() + " start " + tr.amount);
+            Transfer transfer = transfersService.transferAmount(tr);
+            System.out.println(Thread.currentThread() + " finished " + tr.amount);
+        });
+
+        Thread t2 = new Thread(() -> {
+            try {
+                Thread.currentThread().sleep(750);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            TransferRequest tr = new TransferRequest();
+
+            tr.fromAcc = 20;
+            tr.toAcc = 1;
+            tr.amount = BigDecimal.valueOf(200);
+
+            System.out.println(Thread.currentThread() + " start " + tr.amount);
+            Transfer transfer = transfersService.transferAmount(tr);
+            System.out.println(Thread.currentThread() + " finished " + tr.amount);
+        });
+
+        t1.start();
+        t2.start();
+
+        try {
+            t1.join();
+            t2.join();
+
+            System.out.println("A: " + accountsService.getAccount(1).get().balance);
+            System.out.println("B: " + accountsService.getAccount(2).get().balance);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+
+
+    }
+
     public static void main(String[] args) {
         RestServer server = new RestServer();
 
         server.start();
+
+        //server.testTx();
     }
 
     private static class JsonTransformer implements ResponseTransformer {
