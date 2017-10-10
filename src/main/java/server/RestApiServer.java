@@ -16,7 +16,7 @@ import java.math.BigDecimal;
 
 import static spark.Spark.*;
 
-public class RestServer {
+public class RestApiServer {
     //TODO Use in-memory database when development is finished
     private static final String MEM_DB_URL = "jdbc:h2:mem:transfers;MULTI_THREADED=1;";
     private static final String FILE_DB_URL = "jdbc:h2:file:/Users/ilya/Work/Job Search/Revolut/transfers;";
@@ -25,7 +25,7 @@ public class RestServer {
     private final AccountsService accountsService;
     private final TransfersService transfersService;
 
-    public RestServer() {
+    public RestApiServer() {
         JdbcConnectionPool pool = JdbcConnectionPool.create(FILE_DB_URL + DB_INIT, "sa", "");
         DSLContext ctx = DSL.using(pool, SQLDialect.H2);
 
@@ -34,6 +34,14 @@ public class RestServer {
     }
 
     private void start() {
+        accountsApi();
+        transfersApi();
+
+        afterHandler();
+        exceptionsHandler();
+    }
+
+    private void accountsApi() {
         get("/accounts",
                 (request, response) -> accountsService.getAllAccounts(),
                 new JsonTransformer());
@@ -74,7 +82,9 @@ public class RestServer {
             return account;
 
         }, new JsonTransformer());
+    }
 
+    private void transfersApi() {
         get("/transfers",
                 (request, response) -> transfersService.getAllTransfers(),
                 new JsonTransformer());
@@ -104,12 +114,16 @@ public class RestServer {
                     return transfer;
                 },
                 new JsonTransformer());
+    }
 
-        afterAfter((request, response) -> {
+    private void afterHandler() {
+        after((request, response) -> {
             response.header("Content-Encoding", "gzip");
             response.type("application/json");
         });
+    }
 
+    private void exceptionsHandler() {
         exception(Exception.class, (e, request, response) -> {
             ErrorMessage error;
 
@@ -184,7 +198,7 @@ public class RestServer {
     }
 
     public static void main(String[] args) {
-        RestServer server = new RestServer();
+        RestApiServer server = new RestApiServer();
 
         server.start();
     }
