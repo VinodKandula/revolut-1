@@ -24,8 +24,8 @@ public class RestApiServer {
     private static final String MEM_DB_URL = "jdbc:h2:mem:transfers;DB_CLOSE_DELAY=-1;MULTI_THREADED=1;";
     private static final String DB_INIT = "INIT=RUNSCRIPT FROM 'classpath:/h2/schema.sql'\\;RUNSCRIPT FROM 'classpath:/h2/data.sql';";
 
-    private final AccountsService accountsService;
-    private final TransfersService transfersService;
+    private AccountsService accountsService;
+    private TransfersService transfersService;
 
     public RestApiServer() {
         JdbcConnectionPool pool = JdbcConnectionPool.create(MEM_DB_URL + DB_INIT, "sa", "");
@@ -33,6 +33,14 @@ public class RestApiServer {
 
         accountsService = new AccountsService(ctx);
         transfersService = new TransfersService(ctx);
+    }
+
+    public void setAccountsService(AccountsService accountsService) {
+        this.accountsService = accountsService;
+    }
+
+    public void setTransfersService(TransfersService transfersService) {
+        this.transfersService = transfersService;
     }
 
     public void start() {
