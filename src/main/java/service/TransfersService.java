@@ -28,6 +28,7 @@ public class TransfersService {
         return ctx.selectFrom(TRANSFER
                 .join(fromAcc).onKey(TRANSFER.FROM_ACC)
                 .join(toAcc).onKey(TRANSFER.TO_ACC))
+                .orderBy(TRANSFER.DATE.desc())
                 .fetch(new TransferRecordMapper());
     }
 
