@@ -4,6 +4,6 @@ import java.math.BigDecimal;
 
 public class Account {
     public long id;
-    public String name;
+    public String number;
     public BigDecimal balance;
 }

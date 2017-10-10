@@ -22,9 +22,9 @@ public class AccountsService {
     }
 
     public Account createAccount(Account acc) {
-        Account createdAcc = ctx.insertInto(ACCOUNT, ACCOUNT.NAME, ACCOUNT.BALANCE)
-                .values(acc.name, acc.balance)
-                .returning(ACCOUNT.ID, ACCOUNT.NAME, ACCOUNT.BALANCE)
+        Account createdAcc = ctx.insertInto(ACCOUNT, ACCOUNT.NUMBER, ACCOUNT.BALANCE)
+                .values(acc.number, acc.balance)
+                .returning(ACCOUNT.ID, ACCOUNT.NUMBER, ACCOUNT.BALANCE)
                 .fetchOne().into(Account.class);
 
         return createdAcc;
