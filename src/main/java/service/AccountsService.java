@@ -39,7 +39,8 @@ public class AccountsService {
         db.tables.Account toAcc = ACCOUNT.as("toAcc");
 
         return ctx.selectFrom(TRANSFER.join(fromAcc).onKey(TRANSFER.FROM_ACC).join(toAcc).onKey(TRANSFER.TO_ACC))
-                .where(ACCOUNT.ID.eq(accId))
+                .where(fromAcc.ID.eq(accId).or(toAcc.ID.eq(accId)))
+                .orderBy(TRANSFER.DATE.desc())
                 .fetch(record -> {
                     Transfer t = new Transfer();
                     t.fromAcc = new Account();
