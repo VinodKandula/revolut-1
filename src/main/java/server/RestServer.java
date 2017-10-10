@@ -1,20 +1,18 @@
 package server;
 
 import com.google.gson.Gson;
-import model.Account;
-import model.ErrorMessage;
-import model.Transfer;
-import model.TransferRequest;
+import model.*;
 import org.h2.jdbcx.JdbcConnectionPool;
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
+import org.jooq.exception.DataAccessException;
+import org.jooq.exception.NoDataFoundException;
 import org.jooq.impl.DSL;
 import service.AccountsService;
 import service.TransfersService;
 import spark.ResponseTransformer;
 
 import java.math.BigDecimal;
-import java.util.Optional;
 
 import static spark.Spark.*;
 
@@ -36,34 +34,38 @@ public class RestServer {
     }
 
     private void start() {
-        //TODO Add pagination for accounts
         get("/accounts",
                 (request, response) -> accountsService.getAllAccounts(),
                 new JsonTransformer());
 
         get("/accounts/:id",
                 (request, response) -> {
-                    long accId = Long.parseLong(request.params(":id"));
-                    Optional<Account> account = accountsService.getAccount(accId);
+                    String id = request.params(":id");
+                    Validator.validateNumber(id);
 
-                    if (account.isPresent())
-                        return account.get();
-                    else {
-                        response.status(404);
+                    long accId = Long.parseLong(id);
+                    Validator.validateId(accId);
 
-                        return new ErrorMessage("Account with id: " + accId + " is not found");
-                    }
+                    return accountsService.getAccount(accId);
                 },
                 new JsonTransformer());
 
-        //TODO Add pagination for account transfers
         get("/accounts/:id/transfers",
-                (request, response) -> accountsService.getAccountTransfers(Long.parseLong(request.params(":id"))),
+                (request, response) ->  {
+                    String id = request.params(":id");
+                    Validator.validateNumber(id);
+
+                    long accId = Long.parseLong(id);
+                    Validator.validateId(accId);
+
+                    return accountsService.getAccountTransfers(accId);
+                },
                 new JsonTransformer());
 
         post("/accounts", (request, response) -> {
             Gson gson = new Gson();
             Account acc = gson.fromJson(request.body(), Account.class);
+            Validator.validateAccount(acc);
 
             acc = accountsService.createAccount(acc);
 
@@ -73,23 +75,19 @@ public class RestServer {
 
         }, new JsonTransformer());
 
-        //TODO Add pagination for transfers
         get("/transfers",
                 (request, response) -> transfersService.getAllTransfers(),
                 new JsonTransformer());
 
         get("/transfers/:id",
                 (request, response) -> {
-                    long trId = Long.parseLong(request.params(":id"));
-                    Optional<Transfer> transfer = transfersService.getTransfer(trId);
+                    String id = request.params(":id");
+                    Validator.validateNumber(id);
 
-                    if (transfer.isPresent())
-                        return transfer.get();
-                    else {
-                        response.status(404);
+                    long trId = Long.parseLong(id);
+                    Validator.validateId(trId);
 
-                        return new ErrorMessage("Transfer with id: " + trId + " is not found");
-                    }
+                    return transfersService.getTransfer(trId);
                 },
                 new JsonTransformer());
 
@@ -97,19 +95,7 @@ public class RestServer {
                 (request, response) -> {
                     Gson gson = new Gson();
                     TransferRequest trReq = gson.fromJson(request.body(), TransferRequest.class);
-
-                    if (trReq.amount.compareTo(BigDecimal.ZERO) <= 0) {
-                        response.status(422);
-
-                        return new ErrorMessage("Transfer amount: " + trReq.amount + " must be positive");
-                    }
-
-                    if (trReq.fromAcc == trReq.toAcc) {
-                        response.status(422);
-
-                        return new ErrorMessage("Transfer fromAcc: " + trReq.fromAcc + " toAcc: " + trReq.toAcc +
-                                " can not be done between same accounts");
-                    }
+                    Validator.validateTransferRequest(trReq);
 
                     Transfer transfer = transfersService.transferAmount(trReq);
 
@@ -119,10 +105,34 @@ public class RestServer {
                 },
                 new JsonTransformer());
 
-
-        after((request, response) -> {
+        afterAfter((request, response) -> {
             response.header("Content-Encoding", "gzip");
             response.type("application/json");
+        });
+
+        exception(Exception.class, (e, request, response) -> {
+            ErrorMessage error;
+
+            if (e instanceof Validator.ValidationException) {
+                response.status(422);
+
+                error = new ErrorMessage("Validation error", e.getMessage());
+            } else if (e instanceof NoDataFoundException) {
+                response.status(404);
+
+                error = new ErrorMessage("Requested entity not found", e.getMessage());
+            } else if (e instanceof DataAccessException) {
+                response.status(500);
+
+                error = new ErrorMessage("Data access error", e.getMessage());
+            } else {
+                response.status(500);
+
+                error = new ErrorMessage("Internal server error", e.getMessage());
+            }
+
+            JsonTransformer json = new JsonTransformer();
+            response.body(json.render(error));
         });
     }
 
@@ -165,13 +175,11 @@ public class RestServer {
             t1.join();
             t2.join();
 
-            System.out.println("A: " + accountsService.getAccount(1).get().balance);
-            System.out.println("B: " + accountsService.getAccount(2).get().balance);
+            System.out.println("A: " + accountsService.getAccount(1).balance);
+            System.out.println("B: " + accountsService.getAccount(2).balance);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-
-
 
     }
 
@@ -179,8 +187,6 @@ public class RestServer {
         RestServer server = new RestServer();
 
         server.start();
-
-        //server.testTx();
     }
 
     private static class JsonTransformer implements ResponseTransformer {

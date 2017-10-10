@@ -5,7 +5,6 @@ import model.Transfer;
 import org.jooq.DSLContext;
 
 import java.util.List;
-import java.util.Optional;
 
 import static db.tables.Account.ACCOUNT;
 import static db.tables.Transfer.TRANSFER;
@@ -30,8 +29,8 @@ public class AccountsService {
         return createdAcc;
     }
 
-    public Optional<Account> getAccount(long accId) {
-        return ctx.selectFrom(ACCOUNT).where(ACCOUNT.ID.eq(accId)).fetchOptionalInto(Account.class);
+    public Account getAccount(long accId) {
+        return ctx.selectFrom(ACCOUNT).where(ACCOUNT.ID.eq(accId)).fetchSingleInto(Account.class);
     }
 
     public List<Transfer> getAccountTransfers(long accId) {

@@ -4,11 +4,12 @@ import db.tables.Account;
 import db.tables.records.TransferRecord;
 import model.Transfer;
 import model.TransferRequest;
-import org.jooq.*;
+import org.jooq.DSLContext;
+import org.jooq.Record;
+import org.jooq.RecordMapper;
 import org.jooq.impl.DSL;
 
 import java.util.List;
-import java.util.Optional;
 
 import static db.tables.Account.ACCOUNT;
 import static db.tables.Transfer.TRANSFER;
@@ -31,20 +32,21 @@ public class TransfersService {
                 .fetch(new TransferRecordMapper());
     }
 
-    public Optional<Transfer> getTransfer(long transferId) {
-        Optional<Transfer> transfer = ctx.selectFrom(TRANSFER
+    public Transfer getTransfer(long transferId) {
+        return ctx.selectFrom(TRANSFER
                 .join(fromAcc).onKey(TRANSFER.FROM_ACC)
                 .join(toAcc).onKey(TRANSFER.TO_ACC))
                 .where(TRANSFER.ID.eq(transferId))
-                .fetchOptional(new TransferRecordMapper());
-
-        return transfer;
+                .fetchSingle(new TransferRecordMapper());
     }
 
-    //TODO Check transactions correctness
     //TODO Return Optional
     public Transfer transferAmount(TransferRequest trReq) {
         long trId = ctx.transactionResult(configuration -> {
+            DSL.using(configuration)
+                    .selectFrom(ACCOUNT).where(ACCOUNT.ID.eq(trReq.fromAcc).or(ACCOUNT.ID.eq(trReq.toAcc)))
+                    .forUpdate().fetchInto(model.Account.class);
+
             DSL.using(configuration)
                     .update(ACCOUNT)
                     .set(ACCOUNT.BALANCE, ACCOUNT.BALANCE.minus(trReq.amount))
@@ -61,8 +63,6 @@ public class TransfersService {
                     .insertInto(TRANSFER, TRANSFER.FROM_ACC, TRANSFER.TO_ACC, TRANSFER.AMOUNT)
                     .values(trReq.fromAcc, trReq.toAcc, trReq.amount)
                     .returning(TRANSFER.ID).fetchOne();
-
-
 
             return transferRecord.getId();
         });
@@ -86,10 +86,10 @@ public class TransfersService {
             t.timestamp = record.get(TRANSFER.DATE);
 
             t.fromAcc.id = record.get(fromAcc.ID);
-            t.fromAcc.name = record.get(fromAcc.NAME);
+            t.fromAcc.number = record.get(fromAcc.NUMBER);
 
             t.toAcc.id = record.get(toAcc.ID);
-            t.toAcc.name = record.get(toAcc.NAME);
+            t.toAcc.number = record.get(toAcc.NUMBER);
 
             return t;
         }
