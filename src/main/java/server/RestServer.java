@@ -64,14 +64,14 @@ public class RestServer {
 
         post("/accounts", (request, response) -> {
             Gson gson = new Gson();
-            Account acc = gson.fromJson(request.body(), Account.class);
-            Validator.validateAccount(acc);
+            AccountCreation acc = gson.fromJson(request.body(), AccountCreation.class);
+            Validator.validateAccountCreation(acc);
 
-            acc = accountsService.createAccount(acc);
+            Account account = accountsService.createAccount(acc);
 
             response.status(201);
 
-            return acc;
+            return account;
 
         }, new JsonTransformer());
 

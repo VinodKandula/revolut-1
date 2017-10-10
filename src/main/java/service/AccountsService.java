@@ -1,6 +1,7 @@
 package service;
 
 import model.Account;
+import model.AccountCreation;
 import model.Transfer;
 import org.jooq.DSLContext;
 
@@ -20,7 +21,7 @@ public class AccountsService {
         return ctx.selectFrom(ACCOUNT).fetchInto(Account.class);
     }
 
-    public Account createAccount(Account acc) {
+    public Account createAccount(AccountCreation acc) {
         Account createdAcc = ctx.insertInto(ACCOUNT, ACCOUNT.NUMBER, ACCOUNT.BALANCE)
                 .values(acc.number, acc.balance)
                 .returning(ACCOUNT.ID, ACCOUNT.NUMBER, ACCOUNT.BALANCE)

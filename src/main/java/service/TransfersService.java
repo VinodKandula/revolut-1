@@ -40,7 +40,6 @@ public class TransfersService {
                 .fetchSingle(new TransferRecordMapper());
     }
 
-    //TODO Return Optional
     public Transfer transferAmount(TransferRequest trReq) {
         long trId = ctx.transactionResult(configuration -> {
             DSL.using(configuration)

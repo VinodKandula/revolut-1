@@ -12,7 +12,7 @@ public class Validator {
                     "recipient's account id: " + trReq.toAcc);
     }
 
-    public static void validateAccount(Account acc) {
+    public static void validateAccountCreation(AccountCreation acc) {
         if (acc.number == null || acc.number.length() <= 0)
             throw new ValidationException("Account name can not be empty");
     }
