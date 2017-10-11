@@ -20,6 +20,7 @@ public class TestEnv {
     private final HttpClient httpClient = new HttpClient();
 
     private Connection connection;
+    private DSLContext ctx;
 
     public void setUpAll() throws Exception {
         Class.forName(JDBC_DRIVER);
@@ -33,7 +34,7 @@ public class TestEnv {
     public void setUp() throws Exception {
         connection = DriverManager.getConnection(JDBC_URL);
 
-        DSLContext ctx = DSL.using(connection, SQLDialect.H2);
+        ctx = DSL.using(connection, SQLDialect.H2);
         server.setAccountsService(new AccountsService(ctx));
         server.setTransfersService(new TransfersService(ctx));
     }
@@ -46,6 +47,9 @@ public class TestEnv {
         httpClient.stop();
 
         Spark.stop();
+
+        //Wait, until Spark server is fully stopped
+        Thread.sleep(2000);
     }
 
     public HttpClient httpClient() {
