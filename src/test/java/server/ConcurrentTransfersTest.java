@@ -5,10 +5,7 @@ import org.h2.jdbcx.JdbcConnectionPool;
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.math.BigDecimal;
 
@@ -23,12 +20,12 @@ public class ConcurrentTransfersTest {
     private DSLContext ctx;
 
     @BeforeEach
-    void setUp() {
-        String dbUrl = "jdbc:h2:mem:transfers;DB_CLOSE_DELAY=-1;MULTI_THREADED=1;" +
-                "INIT=RUNSCRIPT FROM 'classpath:/h2/schema.sql'\\;RUNSCRIPT FROM 'classpath:/h2/test-data.sql';";
-        JdbcConnectionPool pool = JdbcConnectionPool.create(dbUrl, "sa", "");
-
+    void setUp() throws Exception {
+        JdbcConnectionPool pool = JdbcConnectionPool.create("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;MULTI_THREADED=1;", "sa", "");
         ctx = DSL.using(pool, SQLDialect.H2);
+
+        ctx.execute("RUNSCRIPT FROM 'classpath:/h2/schema.sql'");
+        ctx.execute("RUNSCRIPT FROM 'classpath:/h2/test-data.sql'");
     }
 
     @AfterEach
@@ -73,8 +70,8 @@ public class ConcurrentTransfersTest {
         BigDecimal b1 = ctx.select(ACCOUNT.BALANCE).from(ACCOUNT).where(ACCOUNT.ID.eq(1L)).fetchOne(ACCOUNT.BALANCE);
         BigDecimal b2 = ctx.select(ACCOUNT.BALANCE).from(ACCOUNT).where(ACCOUNT.ID.eq(2L)).fetchOne(ACCOUNT.BALANCE);
 
-        Assertions.assertEquals(b1, BigDecimal.valueOf(40000, 2));
-        Assertions.assertEquals(b2, BigDecimal.valueOf(30000, 2));
+        Assertions.assertEquals(BigDecimal.valueOf(40000, 2), b1);
+        Assertions.assertEquals(BigDecimal.valueOf(30000, 2), b2);
     }
 
     private void transferAmount(TransferRequest trReq) {
