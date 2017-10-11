@@ -14,8 +14,6 @@ import java.math.BigDecimal;
 
 import static db.tables.Account.ACCOUNT;
 
-//SHUTDOWN IMMEDIATELY
-
 /**
  * Not actually unit or functional test.
  *
