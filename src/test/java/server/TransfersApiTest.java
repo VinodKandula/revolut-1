@@ -92,8 +92,6 @@ public class TransfersApiTest {
         Gson gson = new Gson();
         ErrorMessage e = gson.fromJson(res.getContentAsString(), ErrorMessage.class);
 
-        System.out.println(e.msg);
-
         assertEquals(e.msg,"Data access error");
     }
 
