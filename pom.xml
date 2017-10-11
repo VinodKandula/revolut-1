@@ -4,7 +4,7 @@
 
     <groupId>com.revolut</groupId>
     <artifactId>money-transfers</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0</version>
     <packaging>jar</packaging>
 
     <name>money-transfers</name>
