@@ -58,7 +58,10 @@ public class AccountsService {
                     t.timestamp = record.get(TRANSFER.DATE);
 
                     t.fromAcc.id = record.get(fromAcc.ID);
-                    t.fromAcc.id = record.get(toAcc.ID);
+                    t.fromAcc.number = record.get(fromAcc.NUMBER);
+
+                    t.toAcc.id = record.get(toAcc.ID);
+                    t.toAcc.number = record.get(toAcc.NUMBER);
 
                     return t;
                 });
