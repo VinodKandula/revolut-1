@@ -123,8 +123,6 @@ public class ConcurrentTransfersTest {
                     .where(ACCOUNT.ID.eq(accId))
                     .execute();
 
-            System.out.println("Updated balance");
-
             Thread.sleep(2000);
         });
     }
