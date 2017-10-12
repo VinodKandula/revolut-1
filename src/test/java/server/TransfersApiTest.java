@@ -76,7 +76,7 @@ public class TransfersApiTest {
         Gson gson = new Gson();
         ErrorMessage e = gson.fromJson(res.getContentAsString(), ErrorMessage.class);
 
-        assertEquals(e.msg,"Requested entity not found");
+        assertEquals("Requested entity not found", e.msg);
     }
 
     @Test
@@ -93,7 +93,7 @@ public class TransfersApiTest {
         Gson gson = new Gson();
         ErrorMessage e = gson.fromJson(res.getContentAsString(), ErrorMessage.class);
 
-        assertEquals(e.msg,"Validation error");
+        assertEquals("Validation error", e.msg);
     }
 
     @Test
@@ -146,16 +146,18 @@ public class TransfersApiTest {
                 res.getContentAsString());
     }
 
+    //TODO Transfer all money from one account to another
+
     @Test
     void testRequestTransfer_WhenInsufficientBalance_ReturnErrorMessage() throws Exception {
         Request req = TEST_ENV.httpClient().POST("http://localhost:4567/transfers");
-        req.content(new StringContentProvider("{\"fromAcc\":1,\"toAcc\":2,\"amount\":600}"));
+        req.content(new StringContentProvider("{\"fromAcc\":1,\"toAcc\":2,\"amount\":400}"));
         ContentResponse res = req.send();
 
         Gson gson = new Gson();
         ErrorMessage e = gson.fromJson(res.getContentAsString(), ErrorMessage.class);
 
-        assertEquals(e.msg,"Data access error");
+        assertEquals("Data access error", e.msg);
     }
 
     @Test
@@ -167,7 +169,7 @@ public class TransfersApiTest {
         Gson gson = new Gson();
         ErrorMessage e = gson.fromJson(res.getContentAsString(), ErrorMessage.class);
 
-        assertEquals(e.msg,"Validation error");
+        assertEquals("Validation error", e.msg);
     }
 
     @Test
@@ -179,7 +181,7 @@ public class TransfersApiTest {
         Gson gson = new Gson();
         ErrorMessage e = gson.fromJson(res.getContentAsString(), ErrorMessage.class);
 
-        assertEquals(e.msg,"Validation error");
+        assertEquals("Validation error", e.msg);
     }
 
     @Test
