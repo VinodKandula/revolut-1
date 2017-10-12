@@ -95,4 +95,44 @@ public class ConcurrentTransfersTest {
                     .execute();
         });
     }
+
+    @Test
+    void testTransactions_AutocommitIsTurnedOffForTxScope() throws Exception {
+        Assertions.assertEquals(BigDecimal.valueOf(30000, 2), checkAutocommitRead(1), "Balance before tx");
+
+        Thread t1 = new Thread(() -> {
+            checkAutocommitUpdate(1, BigDecimal.valueOf(100));
+        });
+
+        t1.start();
+
+        Thread.sleep(500);
+
+        Assertions.assertEquals(BigDecimal.valueOf(30000, 2), checkAutocommitRead(1), "Balance in the middle of tx");
+
+        t1.join();
+
+        Assertions.assertEquals(BigDecimal.valueOf(20000, 2), checkAutocommitRead(1), "Balance after tx");
+    }
+
+    private void checkAutocommitUpdate(long accId, BigDecimal v) {
+        ctx.transaction(configuration -> {
+            DSL.using(configuration)
+                    .update(ACCOUNT)
+                    .set(ACCOUNT.BALANCE, ACCOUNT.BALANCE.minus(v))
+                    .where(ACCOUNT.ID.eq(accId))
+                    .execute();
+
+            System.out.println("Updated balance");
+
+            Thread.sleep(2000);
+        });
+    }
+
+    private BigDecimal checkAutocommitRead(long accId) {
+        return ctx
+                .select(ACCOUNT.BALANCE).from(ACCOUNT)
+                .where(ACCOUNT.ID.eq(accId))
+                .fetchOne(ACCOUNT.BALANCE);
+    }
 }
