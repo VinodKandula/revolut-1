@@ -3,14 +3,18 @@ package server;
 import com.google.gson.Gson;
 import model.ErrorMessage;
 import model.Transfer;
+import org.eclipse.jetty.client.HttpContentResponse;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.util.StringContentProvider;
+import org.eclipse.jetty.http.HttpStatus;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+//TODO Test POST empty body to /transfers
+//TODO Test POST unprocessable body to /transfers
 public class TransfersApiTest {
     private static final TestEnv TEST_ENV = new TestEnv();
 
@@ -66,6 +70,49 @@ public class TransfersApiTest {
     }
 
     @Test
+    void testGetTransferById_WhenMissedId_ReturnErrorMessage() throws Exception {
+        ContentResponse res = TEST_ENV.httpClient().GET("http://localhost:4567/transfers/999999");
+
+        Gson gson = new Gson();
+        ErrorMessage e = gson.fromJson(res.getContentAsString(), ErrorMessage.class);
+
+        assertEquals(e.msg,"Requested entity not found");
+    }
+
+    @Test
+    void testGetTransferById_WhenMissedId_ReturnNotFoundErrorHttpCode() throws Exception {
+        HttpContentResponse res = (HttpContentResponse)TEST_ENV.httpClient().GET("http://localhost:4567/transfers/999999");
+
+        assertEquals(HttpStatus.NOT_FOUND_404, res.getStatus());
+    }
+
+    @Test
+    void testGetTransferById_WhenNonNumberId_ReturnErrorMessage() throws Exception {
+        ContentResponse res = TEST_ENV.httpClient().GET("http://localhost:4567/transfers/xyz");
+
+        Gson gson = new Gson();
+        ErrorMessage e = gson.fromJson(res.getContentAsString(), ErrorMessage.class);
+
+        assertEquals(e.msg,"Validation error");
+    }
+
+    @Test
+    void testGetTransferById_WhenNonNumberId_ReturnValidationErrorHttpCode() throws Exception {
+        HttpContentResponse res = (HttpContentResponse)TEST_ENV.httpClient().GET("http://localhost:4567/transfers/xyz");
+
+        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY_422, res.getStatus());
+    }
+
+    @Test
+    void testRequestTransfer_ReturnCreatedHttpCode() throws Exception {
+        Request req = TEST_ENV.httpClient().POST("http://localhost:4567/transfers");
+        req.content(new StringContentProvider("{\"fromAcc\":1,\"toAcc\":2,\"amount\":100}"));
+        HttpContentResponse res = (HttpContentResponse)req.send();
+
+        assertEquals(HttpStatus.CREATED_201, res.getStatus());
+    }
+
+    @Test
     void testRequestTransfer_ReturnFulfilledTransferRecord() throws Exception {
         Request req = TEST_ENV.httpClient().POST("http://localhost:4567/transfers");
         req.content(new StringContentProvider("{\"fromAcc\":1,\"toAcc\":2,\"amount\":100}"));
@@ -81,6 +128,22 @@ public class TransfersApiTest {
                 "\"toAcc\":{\"id\":2,\"number\":\"acc2\"}," +
                 "\"amount\":100.00}",
                 gson.toJson(actual));
+    }
+
+    @Test
+    void testRequestTransfer_BalancesOfBothAccountsAreCorrectlyUpdated() throws Exception {
+        Request req = TEST_ENV.httpClient().POST("http://localhost:4567/transfers");
+        req.content(new StringContentProvider("{\"fromAcc\":1,\"toAcc\":2,\"amount\":100}"));
+        ContentResponse res = req.send();
+
+        res = TEST_ENV.httpClient().GET("http://localhost:4567/accounts/1");
+
+        assertEquals("{\"id\":1,\"number\":\"acc1\",\"balance\":200.00}",
+                res.getContentAsString());
+
+        res = TEST_ENV.httpClient().GET("http://localhost:4567/accounts/2");
+        assertEquals("{\"id\":2,\"number\":\"acc2\",\"balance\":500.00}",
+                res.getContentAsString());
     }
 
     @Test
@@ -117,5 +180,23 @@ public class TransfersApiTest {
         ErrorMessage e = gson.fromJson(res.getContentAsString(), ErrorMessage.class);
 
         assertEquals(e.msg,"Validation error");
+    }
+
+    @Test
+    void testRequestTransfer_WhenTransferToItself_ReturnValidationErrorHttpCode() throws Exception {
+        Request req = TEST_ENV.httpClient().POST("http://localhost:4567/transfers");
+        req.content(new StringContentProvider("{\"fromAcc\":1,\"toAcc\":1,\"amount\":600}"));
+        HttpContentResponse res = (HttpContentResponse)req.send();
+
+        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY_422, res.getStatus());
+    }
+
+    @Test
+    void testRequestTransfer_WhenNonPositiveAmount_ReturnValidationErrorHttpCode() throws Exception {
+        Request req = TEST_ENV.httpClient().POST("http://localhost:4567/transfers");
+        req.content(new StringContentProvider("{\"fromAcc\":1,\"toAcc\":1,\"amount\":-20}"));
+        HttpContentResponse res = (HttpContentResponse)req.send();
+
+        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY_422, res.getStatus());
     }
 }
