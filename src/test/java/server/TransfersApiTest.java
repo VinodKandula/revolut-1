@@ -12,8 +12,6 @@ import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-//TODO Test POST empty body to /transfers
-//TODO Test POST unprocessable body to /transfers
 public class TransfersApiTest {
     private static final TestEnv TEST_ENV = new TestEnv();
 
@@ -132,10 +130,9 @@ public class TransfersApiTest {
     void testRequestTransfer_BalancesOfBothAccountsAreCorrectlyUpdated() throws Exception {
         Request req = TEST_ENV.httpClient().POST("http://localhost:4567/transfers");
         req.content(new StringContentProvider("{\"fromAcc\":1,\"toAcc\":2,\"amount\":100}"));
-        ContentResponse res = req.send();
+        req.send();
 
-        res = TEST_ENV.httpClient().GET("http://localhost:4567/accounts/1");
-
+        ContentResponse res = TEST_ENV.httpClient().GET("http://localhost:4567/accounts/1");
         assertEquals("{\"id\":1,\"number\":\"acc1\",\"balance\":200.00}",
                 res.getContentAsString());
 
@@ -144,7 +141,40 @@ public class TransfersApiTest {
                 res.getContentAsString());
     }
 
-    //TODO Transfer all money from one account to another
+    @Test
+    void testRequestTransfer_WhenTransferAllMoney_SendersBalanceIsZero() throws Exception {
+        Request req = TEST_ENV.httpClient().POST("http://localhost:4567/transfers");
+        req.content(new StringContentProvider("{\"fromAcc\":1,\"toAcc\":2,\"amount\":300}"));
+        req.send();
+
+        ContentResponse res = TEST_ENV.httpClient().GET("http://localhost:4567/accounts/1");
+        assertEquals("{\"id\":1,\"number\":\"acc1\",\"balance\":0.00}",
+                res.getContentAsString());
+    }
+
+    @Test
+    void testRequestTransfer_WhenTransferFromUnknowAcc_ReturnErrorMessage() throws Exception {
+        Request req = TEST_ENV.httpClient().POST("http://localhost:4567/transfers");
+        req.content(new StringContentProvider("{\"fromAcc\":901,\"toAcc\":2,\"amount\":100}"));
+        ContentResponse res = req.send();
+
+        Gson gson = new Gson();
+        ErrorMessage e = gson.fromJson(res.getContentAsString(), ErrorMessage.class);
+
+        assertEquals("Data access error", e.msg);
+    }
+
+    @Test
+    void testRequestTransfer_WhenTransferToUnknowAcc_ReturnErrorMessage() throws Exception {
+        Request req = TEST_ENV.httpClient().POST("http://localhost:4567/transfers");
+        req.content(new StringContentProvider("{\"fromAcc\":1,\"toAcc\":902,\"amount\":100}"));
+        ContentResponse res = req.send();
+
+        Gson gson = new Gson();
+        ErrorMessage e = gson.fromJson(res.getContentAsString(), ErrorMessage.class);
+
+        assertEquals("Data access error", e.msg);
+    }
 
     @Test
     void testRequestTransfer_WhenInsufficientBalance_ReturnErrorMessage() throws Exception {
@@ -161,7 +191,7 @@ public class TransfersApiTest {
     @Test
     void testRequestTransfer_WhenTransferToItself_ReturnErrorMessage() throws Exception {
         Request req = TEST_ENV.httpClient().POST("http://localhost:4567/transfers");
-        req.content(new StringContentProvider("{\"fromAcc\":1,\"toAcc\":1,\"amount\":600}"));
+        req.content(new StringContentProvider("{\"fromAcc\":1,\"toAcc\":1,\"amount\":100}"));
         ContentResponse res = req.send();
 
         Gson gson = new Gson();
@@ -209,4 +239,7 @@ public class TransfersApiTest {
 
         assertEquals(HttpStatus.UNPROCESSABLE_ENTITY_422, req.send().getStatus());
     }
+
+    //TODO Test POST empty body to /transfers
+    //TODO Test POST unprocessable body to /transfers
 }
