@@ -14,7 +14,7 @@ public class AccountsRoutes {
         this.accountsService = accountsService;
     }
 
-    public Route getAccountsRoute() {
+    public Route getAccounts() {
         return (request, response) -> accountsService.getAllAccounts();
     }
 

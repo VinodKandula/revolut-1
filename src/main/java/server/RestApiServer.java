@@ -33,7 +33,7 @@ public class RestApiServer {
     }
 
     private void buildAccountsApi() {
-        get("/accounts", accRoutes.getAccountsRoute(), json);
+        get("/accounts", accRoutes.getAccounts(), json);
 
         get("/accounts/:id", accRoutes.getAccountById(), json);
 
