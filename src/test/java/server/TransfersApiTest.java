@@ -73,14 +73,8 @@ public class TransfersApiTest {
         Gson gson = new Gson();
         ErrorMessage e = gson.fromJson(res.getContentAsString(), ErrorMessage.class);
 
-        assertEquals("Requested entity not found", e.msg);
-    }
-
-    @Test
-    void testGetTransferById_WhenMissedId_ReturnNotFoundErrorHttpCode() throws Exception {
-        ContentResponse res = TEST_ENV.httpClient().GET("http://localhost:4567/transfers/999999");
-
         assertEquals(HttpStatus.NOT_FOUND_404, res.getStatus());
+        assertEquals("Requested entity not found", e.msg);
     }
 
     @Test
@@ -90,14 +84,8 @@ public class TransfersApiTest {
         Gson gson = new Gson();
         ErrorMessage e = gson.fromJson(res.getContentAsString(), ErrorMessage.class);
 
-        assertEquals("Validation error", e.msg);
-    }
-
-    @Test
-    void testGetTransferById_WhenNonNumberId_ReturnValidationErrorHttpCode() throws Exception {
-        ContentResponse res = TEST_ENV.httpClient().GET("http://localhost:4567/transfers/xyz");
-
         assertEquals(HttpStatus.UNPROCESSABLE_ENTITY_422, res.getStatus());
+        assertEquals("Validation error", e.msg);
     }
 
     @Test
