@@ -9,9 +9,6 @@ public class MemoryDatabase {
     private static final String DEFAULT_URL = "jdbc:h2:mem:transfers;DB_CLOSE_DELAY=-1;MULTI_THREADED=1;";
     private static final String SCHEMA_SCRIPT = "INIT=RUNSCRIPT FROM 'classpath:/h2/schema.sql'\\;";
 
-    private final String url;
-
-    private final JdbcConnectionPool pool;
     private final DSLContext dslContext;
 
     public MemoryDatabase() {
@@ -27,9 +24,7 @@ public class MemoryDatabase {
         if (dataFile != null && dataFile.length() > 0)
                 composedUrl += "RUNSCRIPT FROM 'classpath:" + dataFile + "';";
 
-        this.url = composedUrl;
-
-        pool = JdbcConnectionPool.create(url, "sa", "");
+        JdbcConnectionPool pool = JdbcConnectionPool.create(composedUrl, "sa", "");
         dslContext = DSL.using(pool, SQLDialect.H2);
     }
 
