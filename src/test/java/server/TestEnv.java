@@ -6,15 +6,14 @@ import org.jooq.DSLContext;
 import spark.Spark;
 
 public class TestEnv {
-    //TODO Rename server --> restServer
     private final TestMemoryDatabaseWrapper db = new TestMemoryDatabaseWrapper();
-    private final RestApiServer server = new RestApiServer(db);
+    private final RestApiServer restServer = new RestApiServer(db);
     private final HttpClient httpClient = new HttpClient();
 
     public void setUpAll() throws Exception {
         httpClient.start();
 
-        server.start();
+        restServer.start();
         Spark.awaitInitialization();
     }
 
