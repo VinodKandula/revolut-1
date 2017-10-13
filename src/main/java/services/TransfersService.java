@@ -1,4 +1,4 @@
-package service;
+package services;
 
 import db.MemoryDatabase;
 import db.tables.Account;

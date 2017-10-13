@@ -9,8 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import server.routes.AccountsRoutes;
 import server.routes.TransfersRoutes;
-import service.AccountsService;
-import service.TransfersService;
+import services.AccountsService;
+import services.TransfersService;
 import spark.ResponseTransformer;
 
 import static spark.Spark.*;

@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 import model.Transfer;
 import model.TransferRequest;
 import model.Validator;
-import service.TransfersService;
+import services.TransfersService;
 import spark.Route;
 
 public class TransfersRoutes {

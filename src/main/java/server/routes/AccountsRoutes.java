@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 import model.Account;
 import model.AccountCreation;
 import model.Validator;
-import service.AccountsService;
+import services.AccountsService;
 import spark.Route;
 
 public class AccountsRoutes {

@@ -1,4 +1,4 @@
-package service;
+package services;
 
 import db.MemoryDatabase;
 import db.tables.records.AccountRecord;
@@ -11,8 +11,6 @@ import java.util.List;
 
 import static db.tables.Account.ACCOUNT;
 import static db.tables.Transfer.TRANSFER;
-
-//TODO Package service --> services
 
 public class AccountsService {
     private final MemoryDatabase db;
