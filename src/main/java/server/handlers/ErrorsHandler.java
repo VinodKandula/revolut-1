@@ -14,7 +14,7 @@ public class ErrorsHandler {
 
     private final JsonTransformer json = new JsonTransformer();
 
-    public ExceptionHandler exceptionsHandler() {
+    public ExceptionHandler<? super java.lang.Exception> exceptionsHandler() {
         return (e, request, response) -> {
             ErrorMessage error;
 
