@@ -31,7 +31,7 @@ public class GeneralApiServerTest {
     }
 
     @Test
-    void testRequestToUnknowEndPoint_ReturnNotFoundHttpError() throws Exception {
+    void testRequestToUnknownEndPoint_ReturnNotFoundHttpError() throws Exception {
         ContentResponse res = TEST_ENV.httpClient().GET("http://localhost:4567/xxxyyyzzz");
 
         assertEquals(HttpStatus.NOT_FOUND_404, res.getStatus());

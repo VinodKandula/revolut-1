@@ -38,25 +38,25 @@ public class TestEnv {
     }
 
     public static class TestMemoryDatabaseWrapper extends MemoryDatabase {
-        private MemoryDatabase holded;
+        private MemoryDatabase wrappedInstance;
 
         public TestMemoryDatabaseWrapper() {}
 
         public TestMemoryDatabaseWrapper(MemoryDatabase memoryDatabase) {
-            holded = memoryDatabase;
+            wrappedInstance = memoryDatabase;
         }
 
         public void wrap(MemoryDatabase memoryDatabase) {
-            this.holded = memoryDatabase;
+            this.wrappedInstance = memoryDatabase;
         }
 
         public void shutdown() {
-            holded.ctx().execute("SHUTDOWN IMMEDIATELY");
+            wrappedInstance.ctx().execute("SHUTDOWN IMMEDIATELY");
         }
 
         @Override
         public DSLContext ctx() {
-            return holded.ctx();
+            return wrappedInstance.ctx();
         }
     }
 }
