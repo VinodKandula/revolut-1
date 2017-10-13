@@ -6,10 +6,14 @@ import model.Transfer;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.util.StringContentProvider;
+import org.eclipse.jetty.http.HttpStatus;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+//TODO Test Not Found for unknown end point
+//TODO Test Unsupported HTTP methods
+//TODO Test Internal server error
 class AccountsApiTest {
     private static final TestEnv TEST_ENV = new TestEnv();
 
@@ -51,6 +55,14 @@ class AccountsApiTest {
         assertEquals("{\"id\":1,\"number\":\"acc1\",\"balance\":300.00}", res.getContentAsString());
     }
 
+
+
+    //TODO Get account with missing id:
+    //TODO Get transfers for account with missing id
+
+    //TODO Get account with wrong id
+    //TODO Get transfers for account with wrong id
+
     @Test
     void testGetAllTransfersForAccountById_ReturnAccountTransfers() throws Exception {
         ContentResponse res = TEST_ENV.httpClient().GET("http://localhost:4567/accounts/2/transfers");
@@ -82,6 +94,38 @@ class AccountsApiTest {
     }
 
     @Test
+    void testCreateNewAccount_ReturnCreatedHttpCode() throws Exception {
+        Request req = TEST_ENV.httpClient().POST("http://localhost:4567/accounts");
+        req.content(new StringContentProvider("{\"number\":\"acc4\", \"balance\":700}"));
+        ContentResponse res = req.send();
+
+        assertEquals(HttpStatus.CREATED_201, res.getStatus());
+    }
+
+    @Test
+    void testCreateNewAccount_WhenZeroBalance_ReturnCreatedAccount() throws Exception {
+        Request req = TEST_ENV.httpClient().POST("http://localhost:4567/accounts");
+        req.content(new StringContentProvider("{\"number\":\"acc4\", \"balance\":0}"));
+        ContentResponse res = req.send();
+
+        assertEquals("{\"id\":4,\"number\":\"acc4\",\"balance\":0.00}", res.getContentAsString());
+    }
+
+    //TODO Test return code when account is created
+
+    @Test
+    void testCreateNewAccount_WhenNegativeBalance_ReturnErrorMessage() throws Exception {
+        Request req = TEST_ENV.httpClient().POST("http://localhost:4567/accounts");
+        req.content(new StringContentProvider("{\"balance\":-100}"));
+        ContentResponse res = req.send();
+
+        Gson gson = new Gson();
+        ErrorMessage e = gson.fromJson(res.getContentAsString(), ErrorMessage.class);
+
+        assertEquals(e.msg, "Validation error");
+    }
+
+    @Test
     void testCreateNewAccount_WhenMissedName_ReturnErrorMessage() throws Exception {
         Request req = TEST_ENV.httpClient().POST("http://localhost:4567/accounts");
         req.content(new StringContentProvider("{\"balance\":700}"));
@@ -92,6 +136,9 @@ class AccountsApiTest {
 
         assertEquals(e.msg, "Validation error");
     }
+
+
+    //TODO Test validation return code for account services
 
     @Test
     void testCreateNewAccount_WhenEmptyName_ReturnErrorMessage() throws Exception {
