@@ -185,6 +185,18 @@ public class TransfersApiTest {
     }
 
     @Test
+    void testRequestTransfer_WhenZeroAmount_ReturnErrorMessage() throws Exception {
+        Request req = TEST_ENV.httpClient().POST("http://localhost:4567/transfers");
+        req.content(new StringContentProvider("{\"fromAcc\":1,\"toAcc\":1,\"amount\":0}"));
+        ContentResponse res = req.send();
+
+        Gson gson = new Gson();
+        ErrorMessage e = gson.fromJson(res.getContentAsString(), ErrorMessage.class);
+
+        assertEquals("Validation error", e.msg);
+    }
+
+    @Test
     void testRequestTransfer_WhenTransferToItself_ReturnValidationErrorHttpCode() throws Exception {
         Request req = TEST_ENV.httpClient().POST("http://localhost:4567/transfers");
         req.content(new StringContentProvider("{\"fromAcc\":1,\"toAcc\":1,\"amount\":600}"));
