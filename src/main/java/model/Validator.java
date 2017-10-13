@@ -2,7 +2,6 @@ package model;
 
 import java.math.BigDecimal;
 
-//TODO Test validator
 public class Validator {
     public static void validateTransferRequest(TransferRequest trReq) {
         if (trReq.amount.compareTo(BigDecimal.ZERO) <= 0)
@@ -16,6 +15,7 @@ public class Validator {
     public static void validateAccountCreation(AccountCreation acc) {
         if (acc.number == null || acc.number.length() <= 0)
             throw new ValidationException("Account name can not be empty");
+
         if (acc.balance == null || acc.balance.compareTo(BigDecimal.ZERO) < 0)
             throw new ValidationException("Account balance can not be negative");
     }
