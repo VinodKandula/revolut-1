@@ -41,7 +41,7 @@ public class TransfersService {
     }
 
     public Transfer transferAmount(TransferRequest trReq) {
-        Transfer created = db.ctx().transactionResult(configuration -> {
+        return db.ctx().transactionResult(configuration -> {
             DSL.using(configuration)
                     .selectFrom(ACCOUNT).where(ACCOUNT.ID.eq(trReq.fromAcc).or(ACCOUNT.ID.eq(trReq.toAcc)))
                     .forUpdate().fetchInto(model.Account.class);
@@ -67,8 +67,6 @@ public class TransfersService {
                     .where(TRANSFER.ID.eq(trRec.getId()))
                     .fetchSingle(new TransferRecordMapper());
         });
-
-        return created;
     }
 
     private class TransferRecordMapper implements RecordMapper<Record, Transfer> {

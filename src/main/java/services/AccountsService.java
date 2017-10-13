@@ -24,7 +24,7 @@ public class AccountsService {
     }
 
     public Account createAccount(AccountCreation acc) {
-        Account created = db.ctx().transactionResult(configuration -> {
+        return db.ctx().transactionResult(configuration -> {
             AccountRecord accRec = DSL.using(configuration).insertInto(ACCOUNT, ACCOUNT.NUMBER, ACCOUNT.BALANCE)
                     .values(acc.number, acc.balance)
                     .returning(ACCOUNT.ID)
@@ -34,8 +34,6 @@ public class AccountsService {
                     .where(ACCOUNT.ID.eq(accRec.getId()))
                     .fetchSingle().into(Account.class);
         });
-
-        return created;
     }
 
     public Account getAccount(long accId) {
