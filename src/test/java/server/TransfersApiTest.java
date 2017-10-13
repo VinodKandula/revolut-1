@@ -239,7 +239,4 @@ public class TransfersApiTest {
 
         assertEquals(HttpStatus.UNPROCESSABLE_ENTITY_422, req.send().getStatus());
     }
-
-    //TODO Test POST empty body to /transfers
-    //TODO Test POST unprocessable body to /transfers
 }
