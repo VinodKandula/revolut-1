@@ -18,6 +18,11 @@ class ValidatorTest {
     }
 
     @Test
+    void testValidateTransferRequest_WhenNullTranferRequest_ThrowIllegalStateEx() {
+        assertThrows(IllegalStateException.class, () -> Validator.validateTransferRequest(null));
+    }
+
+    @Test
     void testValidateTransferRequest_WhenNegativeAmount_ThrowValidationEx() {
         TransferRequest trReq = new TransferRequest();
         trReq.amount = BigDecimal.valueOf(-400);
@@ -44,6 +49,11 @@ class ValidatorTest {
         ac.balance = BigDecimal.valueOf(100);
 
         Validator.validateAccountCreation(ac);
+    }
+
+    @Test
+    void testValidateTransferRequest_WhenNullAccountCreation_ThrowIllegalStateEx() {
+        assertThrows(IllegalStateException.class, () -> Validator.validateAccountCreation(null));
     }
 
     @Test

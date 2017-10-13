@@ -4,6 +4,9 @@ import java.math.BigDecimal;
 
 public class Validator {
     public static void validateTransferRequest(TransferRequest trReq) {
+        if (null == trReq)
+            throw new IllegalStateException("Transfer amount object can not be null");
+
         if (trReq.amount.compareTo(BigDecimal.ZERO) <= 0)
             throw new ValidationException("Transfer amount: " + trReq.amount + " must be positive");
 
@@ -13,6 +16,9 @@ public class Validator {
     }
 
     public static void validateAccountCreation(AccountCreation acc) {
+        if (null == acc)
+            throw new IllegalStateException("Transfer amount object can not be null");
+
         if (acc.number == null || acc.number.length() <= 0)
             throw new ValidationException("Account name can not be empty");
 
