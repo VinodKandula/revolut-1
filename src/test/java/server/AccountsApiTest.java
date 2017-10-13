@@ -11,9 +11,6 @@ import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-//TODO Test Not Found for unknown end point
-//TODO Test Unsupported HTTP methods
-//TODO Test Internal server error
 class AccountsApiTest {
     private static final TestEnv TEST_ENV = new TestEnv();
 
@@ -111,10 +108,8 @@ class AccountsApiTest {
         assertEquals("{\"id\":4,\"number\":\"acc4\",\"balance\":0.00}", res.getContentAsString());
     }
 
-    //TODO Test return code when account is created
-
     @Test
-    void testCreateNewAccount_WhenNegativeBalance_ReturnErrorMessage() throws Exception {
+    void testCreateNewAccount_WhenNegativeBalance_ReturnValidationError() throws Exception {
         Request req = TEST_ENV.httpClient().POST("http://localhost:4567/accounts");
         req.content(new StringContentProvider("{\"balance\":-100}"));
         ContentResponse res = req.send();
@@ -122,11 +117,12 @@ class AccountsApiTest {
         Gson gson = new Gson();
         ErrorMessage e = gson.fromJson(res.getContentAsString(), ErrorMessage.class);
 
+        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY_422, res.getStatus());
         assertEquals(e.msg, "Validation error");
     }
 
     @Test
-    void testCreateNewAccount_WhenMissedName_ReturnErrorMessage() throws Exception {
+    void testCreateNewAccount_WhenMissedName_ReturnValidationError() throws Exception {
         Request req = TEST_ENV.httpClient().POST("http://localhost:4567/accounts");
         req.content(new StringContentProvider("{\"balance\":700}"));
         ContentResponse res = req.send();
@@ -134,14 +130,12 @@ class AccountsApiTest {
         Gson gson = new Gson();
         ErrorMessage e = gson.fromJson(res.getContentAsString(), ErrorMessage.class);
 
+        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY_422, res.getStatus());
         assertEquals(e.msg, "Validation error");
     }
 
-
-    //TODO Test validation return code for account services
-
     @Test
-    void testCreateNewAccount_WhenEmptyName_ReturnErrorMessage() throws Exception {
+    void testCreateNewAccount_WhenEmptyName_ReturnValidationError() throws Exception {
         Request req = TEST_ENV.httpClient().POST("http://localhost:4567/accounts");
         req.content(new StringContentProvider("{\"number\":\"\",\"balance\":700}"));
         ContentResponse res = req.send();
@@ -149,6 +143,7 @@ class AccountsApiTest {
         Gson gson = new Gson();
         ErrorMessage e = gson.fromJson(res.getContentAsString(), ErrorMessage.class);
 
+        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY_422, res.getStatus());
         assertEquals(e.msg, "Validation error");
     }
 }

@@ -189,7 +189,7 @@ public class TransfersApiTest {
     }
 
     @Test
-    void testRequestTransfer_WhenTransferToItself_ReturnErrorMessage() throws Exception {
+    void testRequestTransfer_WhenTransferToItself_ReturnValidationError() throws Exception {
         Request req = TEST_ENV.httpClient().POST("http://localhost:4567/transfers");
         req.content(new StringContentProvider("{\"fromAcc\":1,\"toAcc\":1,\"amount\":100}"));
         ContentResponse res = req.send();
@@ -197,11 +197,12 @@ public class TransfersApiTest {
         Gson gson = new Gson();
         ErrorMessage e = gson.fromJson(res.getContentAsString(), ErrorMessage.class);
 
+        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY_422, req.send().getStatus());
         assertEquals("Validation error", e.msg);
     }
 
     @Test
-    void testRequestTransfer_WhenNonPositiveAmount_ReturnErrorMessage() throws Exception {
+    void testRequestTransfer_WhenNonPositiveAmount_ReturnValidationError() throws Exception {
         Request req = TEST_ENV.httpClient().POST("http://localhost:4567/transfers");
         req.content(new StringContentProvider("{\"fromAcc\":1,\"toAcc\":1,\"amount\":-20}"));
         ContentResponse res = req.send();
@@ -209,11 +210,12 @@ public class TransfersApiTest {
         Gson gson = new Gson();
         ErrorMessage e = gson.fromJson(res.getContentAsString(), ErrorMessage.class);
 
+        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY_422, req.send().getStatus());
         assertEquals("Validation error", e.msg);
     }
 
     @Test
-    void testRequestTransfer_WhenZeroAmount_ReturnErrorMessage() throws Exception {
+    void testRequestTransfer_WhenZeroAmount_ReturnValidationError() throws Exception {
         Request req = TEST_ENV.httpClient().POST("http://localhost:4567/transfers");
         req.content(new StringContentProvider("{\"fromAcc\":1,\"toAcc\":1,\"amount\":0}"));
         ContentResponse res = req.send();
@@ -221,22 +223,7 @@ public class TransfersApiTest {
         Gson gson = new Gson();
         ErrorMessage e = gson.fromJson(res.getContentAsString(), ErrorMessage.class);
 
+        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY_422, req.send().getStatus());
         assertEquals("Validation error", e.msg);
-    }
-
-    @Test
-    void testRequestTransfer_WhenTransferToItself_ReturnValidationErrorHttpCode() throws Exception {
-        Request req = TEST_ENV.httpClient().POST("http://localhost:4567/transfers");
-        req.content(new StringContentProvider("{\"fromAcc\":1,\"toAcc\":1,\"amount\":600}"));
-
-        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY_422, req.send().getStatus());
-    }
-
-    @Test
-    void testRequestTransfer_WhenNonPositiveAmount_ReturnValidationErrorHttpCode() throws Exception {
-        Request req = TEST_ENV.httpClient().POST("http://localhost:4567/transfers");
-        req.content(new StringContentProvider("{\"fromAcc\":1,\"toAcc\":1,\"amount\":-20}"));
-
-        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY_422, req.send().getStatus());
     }
 }
