@@ -52,13 +52,27 @@ class AccountsApiTest {
         assertEquals("{\"id\":1,\"number\":\"acc1\",\"balance\":300.00}", res.getContentAsString());
     }
 
+    @Test
+    void testGetAccountById_WhenMissedId_ReturnErrorMessage() throws Exception {
+        ContentResponse res = TEST_ENV.httpClient().GET("http://localhost:4567/accounts/99999");
 
+        Gson gson = new Gson();
+        ErrorMessage e = gson.fromJson(res.getContentAsString(), ErrorMessage.class);
 
-    //TODO Get account with missing id:
-    //TODO Get transfers for account with missing id
+        assertEquals(HttpStatus.NOT_FOUND_404, res.getStatus());
+        assertEquals("Requested entity not found", e.msg);
+    }
 
-    //TODO Get account with wrong id
-    //TODO Get transfers for account with wrong id
+    @Test
+    void testGetAccountById_WhenNonNumberId_ReturnErrorMessage() throws Exception {
+        ContentResponse res = TEST_ENV.httpClient().GET("http://localhost:4567/accounts/xyz");
+
+        Gson gson = new Gson();
+        ErrorMessage e = gson.fromJson(res.getContentAsString(), ErrorMessage.class);
+
+        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY_422, res.getStatus());
+        assertEquals("Validation error", e.msg);
+    }
 
     @Test
     void testGetAllTransfersForAccountById_ReturnAccountTransfers() throws Exception {
@@ -79,6 +93,28 @@ class AccountsApiTest {
 
         Assertions.assertTrue(trs[0].timestamp.compareTo(trs[1].timestamp) >= 0);
         Assertions.assertTrue(trs[1].timestamp.compareTo(trs[2].timestamp) >= 0);
+    }
+
+    @Test
+    void testGetAllTransfersForAccountById_WhenMissedId_ReturnNotFoundError() throws Exception {
+        ContentResponse res = TEST_ENV.httpClient().GET("http://localhost:4567/accounts/99999/transfers");
+
+        Gson gson = new Gson();
+        ErrorMessage e = gson.fromJson(res.getContentAsString(), ErrorMessage.class);
+
+        assertEquals(HttpStatus.NOT_FOUND_404, res.getStatus());
+        assertEquals("Requested entity not found", e.msg);
+    }
+
+    @Test
+    void testGetAllTransfersForAccountById_WhenNonNumberId_ReturnNotFoundError() throws Exception {
+        ContentResponse res = TEST_ENV.httpClient().GET("http://localhost:4567/accounts/xyz/transfers");
+
+        Gson gson = new Gson();
+        ErrorMessage e = gson.fromJson(res.getContentAsString(), ErrorMessage.class);
+
+        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY_422, res.getStatus());
+        assertEquals("Validation error", e.msg);
     }
 
     @Test
