@@ -7,7 +7,7 @@ import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class ApiServerTest {
+public class GeneralApiServerTest {
     private static final TestEnv TEST_ENV = new TestEnv();
 
     @BeforeAll

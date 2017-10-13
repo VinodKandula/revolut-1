@@ -1,15 +1,14 @@
 package server;
 
 import com.google.gson.Gson;
+import db.MemoryDatabase;
 import model.*;
-import org.h2.jdbcx.JdbcConnectionPool;
-import org.jooq.DSLContext;
-import org.jooq.SQLDialect;
 import org.jooq.exception.DataAccessException;
 import org.jooq.exception.NoDataFoundException;
-import org.jooq.impl.DSL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import server.routes.AccountsRoutes;
+import server.routes.TransfersRoutes;
 import service.AccountsService;
 import service.TransfersService;
 import spark.ResponseTransformer;
@@ -19,119 +18,51 @@ import static spark.Spark.*;
 public class RestApiServer {
     private final static Logger logger = LoggerFactory.getLogger(RestApiServer.class);
 
-    private static final String MEM_DB_URL = "jdbc:h2:mem:transfers;DB_CLOSE_DELAY=-1;MULTI_THREADED=1;";
-    private static final String DB_INIT = "INIT=RUNSCRIPT FROM 'classpath:/h2/schema.sql'\\;RUNSCRIPT FROM 'classpath:/h2/data.sql';";
+    private final AccountsRoutes accRoutes;
+    private final TransfersRoutes trToutes;
+    private final JsonTransformer json = new JsonTransformer();
 
-    private AccountsService accountsService;
-    private TransfersService transfersService;
-
-    public RestApiServer() {
-        JdbcConnectionPool pool = JdbcConnectionPool.create(MEM_DB_URL + DB_INIT, "sa", "");
-        DSLContext ctx = DSL.using(pool, SQLDialect.H2);
-
-        accountsService = new AccountsService(ctx);
-        transfersService = new TransfersService(ctx);
-    }
-
-    public void setAccountsService(AccountsService accountsService) {
-        this.accountsService = accountsService;
-    }
-
-    public void setTransfersService(TransfersService transfersService) {
-        this.transfersService = transfersService;
+    public RestApiServer(MemoryDatabase db) {
+        accRoutes = new AccountsRoutes(new AccountsService(db));
+        trToutes = new TransfersRoutes(new TransfersService(db));
     }
 
     public void start() {
-        accountsApi();
-        transfersApi();
+        buildAccountsApi();
+        buildTransfersApi();
 
-        afterHandler();
-        exceptionsHandler();
+        registerResponseContentHandler();
+        registerErrorsHandler();
     }
 
-    private void accountsApi() {
-        get("/accounts",
-                (request, response) -> accountsService.getAllAccounts(),
-                new JsonTransformer());
+    private void buildAccountsApi() {
+        get("/accounts", accRoutes.getAccountsRoute(), json);
 
-        get("/accounts/:id",
-                (request, response) -> {
-                    String id = request.params(":id");
-                    Validator.validateNumber(id);
+        get("/accounts/:id", accRoutes.getAccountById(), json);
 
-                    long accId = Long.parseLong(id);
-                    Validator.validateId(accId);
+        get("/accounts/:id/transfers", accRoutes.getAccountTransfersById(), json);
 
-                    return accountsService.getAccount(accId);
-                },
-                new JsonTransformer());
-
-        get("/accounts/:id/transfers",
-                (request, response) ->  {
-                    String id = request.params(":id");
-                    Validator.validateNumber(id);
-
-                    long accId = Long.parseLong(id);
-                    Validator.validateId(accId);
-
-                    return accountsService.getAccountTransfers(accId);
-                },
-                new JsonTransformer());
-
-        post("/accounts", (request, response) -> {
-            Gson gson = new Gson();
-            AccountCreation acc = gson.fromJson(request.body(), AccountCreation.class);
-            Validator.validateAccountCreation(acc);
-
-            Account account = accountsService.createAccount(acc);
-
-            response.status(201);
-
-            return account;
-
-        }, new JsonTransformer());
+        post("/accounts", accRoutes.postAccount(), json);
     }
 
-    private void transfersApi() {
-        get("/transfers",
-                (request, response) -> transfersService.getAllTransfers(),
-                new JsonTransformer());
+    private void buildTransfersApi() {
+        get("/transfers", trToutes.getTransfers(), json);
 
-        get("/transfers/:id",
-                (request, response) -> {
-                    String id = request.params(":id");
-                    Validator.validateNumber(id);
+        get("/transfers/:id", trToutes.getTransferById(), json);
 
-                    long trId = Long.parseLong(id);
-                    Validator.validateId(trId);
-
-                    return transfersService.getTransfer(trId);
-                },
-                new JsonTransformer());
-
-        post("/transfers",
-                (request, response) -> {
-                    Gson gson = new Gson();
-                    TransferRequest trReq = gson.fromJson(request.body(), TransferRequest.class);
-                    Validator.validateTransferRequest(trReq);
-
-                    Transfer transfer = transfersService.transferAmount(trReq);
-
-                    response.status(201);
-
-                    return transfer;
-                },
-                new JsonTransformer());
+        post("/transfers", trToutes.postTransfer(), json);
     }
 
-    private void afterHandler() {
+    //TODO Move to responses.ContentHandler
+    private void registerResponseContentHandler() {
         after((request, response) -> {
             response.header("Content-Encoding", "gzip");
             response.type("application/json");
         });
     }
 
-    private void exceptionsHandler() {
+    //TODO Move to responses.ErrorsHandler
+    private void registerErrorsHandler() {
         exception(Exception.class, (e, request, response) -> {
             ErrorMessage error;
 
@@ -160,19 +91,21 @@ public class RestApiServer {
         });
     }
 
-    public static void main(String[] args) {
-        RestApiServer server = new RestApiServer();
-
-        server.start();
-    }
-
+    //TODO Move to responses.JsonTransformer
     private static class JsonTransformer implements ResponseTransformer {
-        private final Gson gson = new Gson();
-
         @Override
         public String render(Object model) {
+            Gson gson = new Gson();
+
             return gson.toJson(model);
         }
+    }
+
+    public static void main(String[] args) {
+        MemoryDatabase db = new MemoryDatabase();
+        RestApiServer server = new RestApiServer(db);
+
+        server.start();
     }
 }
 

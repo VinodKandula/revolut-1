@@ -1,10 +1,10 @@
 package service;
 
+import db.MemoryDatabase;
 import db.tables.Account;
 import db.tables.records.TransferRecord;
 import model.Transfer;
 import model.TransferRequest;
-import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.RecordMapper;
 import org.jooq.impl.DSL;
@@ -15,17 +15,17 @@ import static db.tables.Account.ACCOUNT;
 import static db.tables.Transfer.TRANSFER;
 
 public class TransfersService {
-    private final DSLContext ctx;
+    private final MemoryDatabase db;
 
     private final Account fromAcc = ACCOUNT.as("fromAcc");
     private final Account toAcc = ACCOUNT.as("toAcc");
 
-    public TransfersService(DSLContext ctx) {
-        this.ctx = ctx;
+    public TransfersService(MemoryDatabase db) {
+        this.db = db;
     }
 
     public List<Transfer> getAllTransfers() {
-        return ctx.selectFrom(TRANSFER
+        return db.ctx().selectFrom(TRANSFER
                 .join(fromAcc).onKey(TRANSFER.FROM_ACC)
                 .join(toAcc).onKey(TRANSFER.TO_ACC))
                 .orderBy(TRANSFER.DATE.desc())
@@ -33,7 +33,7 @@ public class TransfersService {
     }
 
     public Transfer getTransfer(long transferId) {
-        return ctx.selectFrom(TRANSFER
+        return db.ctx().selectFrom(TRANSFER
                 .join(fromAcc).onKey(TRANSFER.FROM_ACC)
                 .join(toAcc).onKey(TRANSFER.TO_ACC))
                 .where(TRANSFER.ID.eq(transferId))
@@ -41,7 +41,7 @@ public class TransfersService {
     }
 
     public Transfer transferAmount(TransferRequest trReq) {
-        Transfer created = ctx.transactionResult(configuration -> {
+        Transfer created = db.ctx().transactionResult(configuration -> {
             DSL.using(configuration)
                     .selectFrom(ACCOUNT).where(ACCOUNT.ID.eq(trReq.fromAcc).or(ACCOUNT.ID.eq(trReq.toAcc)))
                     .forUpdate().fetchInto(model.Account.class);
@@ -63,7 +63,7 @@ public class TransfersService {
                     .values(trReq.fromAcc, trReq.toAcc, trReq.amount)
                     .returning(TRANSFER.ID).fetchOne();
 
-            return ctx.selectFrom(TRANSFER.join(fromAcc).onKey(TRANSFER.FROM_ACC).join(toAcc).onKey(TRANSFER.TO_ACC))
+            return DSL.using(configuration).selectFrom(TRANSFER.join(fromAcc).onKey(TRANSFER.FROM_ACC).join(toAcc).onKey(TRANSFER.TO_ACC))
                     .where(TRANSFER.ID.eq(trRec.getId()))
                     .fetchSingle(new TransferRecordMapper());
         });

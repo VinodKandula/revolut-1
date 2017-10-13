@@ -1,30 +1,17 @@
 package server;
 
+import db.MemoryDatabase;
 import org.eclipse.jetty.client.HttpClient;
 import org.jooq.DSLContext;
-import org.jooq.SQLDialect;
-import org.jooq.impl.DSL;
-import service.AccountsService;
-import service.TransfersService;
 import spark.Spark;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-
 public class TestEnv {
-    private static final String JDBC_DRIVER = "org.h2.Driver";
-    private static final String JDBC_URL = "jdbc:h2:mem:transfers;" +
-            "INIT=RUNSCRIPT FROM 'classpath:/h2/schema.sql'\\;RUNSCRIPT FROM 'classpath:/h2/test-data.sql';";
-
-    private final RestApiServer server = new RestApiServer();
+    //TODO Rename server --> restServer
+    private final TestMemoryDatabaseWrapper db = new TestMemoryDatabaseWrapper();
+    private final RestApiServer server = new RestApiServer(db);
     private final HttpClient httpClient = new HttpClient();
 
-    private Connection connection;
-    private DSLContext ctx;
-
     public void setUpAll() throws Exception {
-        Class.forName(JDBC_DRIVER);
-
         httpClient.start();
 
         server.start();
@@ -32,27 +19,45 @@ public class TestEnv {
     }
 
     public void setUp() throws Exception {
-        connection = DriverManager.getConnection(JDBC_URL);
-
-        ctx = DSL.using(connection, SQLDialect.H2);
-        server.setAccountsService(new AccountsService(ctx));
-        server.setTransfersService(new TransfersService(ctx));
+        db.wrap(new MemoryDatabase("jdbc:h2:mem:test;", "/h2/test-data.sql"));
     }
 
     public void tearDown() throws Exception {
-        connection.close();
+        db.shutdown();
     }
 
     public void tearDownAll() throws Exception {
         httpClient.stop();
 
         Spark.stop();
-
         //Wait, until Spark server is fully stopped
         Thread.sleep(2000);
     }
 
     public HttpClient httpClient() {
         return httpClient;
+    }
+
+    public static class TestMemoryDatabaseWrapper extends MemoryDatabase {
+        private MemoryDatabase holded;
+
+        public TestMemoryDatabaseWrapper() {}
+
+        public TestMemoryDatabaseWrapper(MemoryDatabase memoryDatabase) {
+            holded = memoryDatabase;
+        }
+
+        public void wrap(MemoryDatabase memoryDatabase) {
+            this.holded = memoryDatabase;
+        }
+
+        public void shutdown() {
+            holded.ctx().execute("SHUTDOWN IMMEDIATELY");
+        }
+
+        @Override
+        public DSLContext ctx() {
+            return holded.ctx();
+        }
     }
 }
