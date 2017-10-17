@@ -83,7 +83,7 @@
                         </goals>
                         <configuration>
                             <jdbc>
-                                <url>jdbc:hsqldb:res:/hsqldb/transfers</url>
+                                <url>jdbc:hsqldb:file:${project.basedir}/src/main/resources/hsqldb/transfers</url>
                                 <user>sa</user>
                             </jdbc>
                             <generator>
