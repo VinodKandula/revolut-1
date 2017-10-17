@@ -18,7 +18,7 @@ public class TestEnv {
     }
 
     public void setUp() throws Exception {
-        db.wrap(new MemoryDatabase("jdbc:h2:mem:test;", "/h2/test-data.sql"));
+        db.wrap(new MemoryDatabase());
     }
 
     public void tearDown() throws Exception {

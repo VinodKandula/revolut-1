@@ -41,7 +41,7 @@ class AccountsApiTest {
         assertEquals(
                 "[{\"id\":1,\"number\":\"acc1\",\"balance\":300.00}," +
                         "{\"id\":2,\"number\":\"acc2\",\"balance\":400.00}," +
-                        "{\"id\":3,\"number\":\"acc3\",\"balance\":500.00}]",
+                        "{\"id\":3,\"number\":\"acc3\",\"balance\":1000.00}]",
                 res.getContentAsString());
     }
 
